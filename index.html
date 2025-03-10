@@ -160,10 +160,7 @@
         income: [],
         expenses: [],
         savings: { main: [], emergency: [] },
-        withdrawals: { main: [], emergency: [] },
-        wallet: 0,
-        savingsMain: 0,
-        savingsEmergency: 0
+        withdrawals: { main: [], emergency: [] }
     };
 
     const saveData = (newData) => {
@@ -192,55 +189,30 @@
     };
 
     const addEntry = (category) => {
-        const amount = parseFloat(document.getElementById('amount').value);
+        const amount = document.getElementById('amount').value;
         if (!amount) return;
-        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
         data[category].push(newEntry);
-        
-        if (category === 'income') {
-            data.wallet += amount;
-        } else if (category === 'expenses') {
-            data.wallet -= amount;
-        }
-
         saveData(data);
         document.getElementById('amount').value = '';
         checkInput();
     };
 
     const addSavings = (category) => {
-        const amount = parseFloat(document.getElementById('amount').value);
+        const amount = document.getElementById('amount').value;
         if (!amount) return;
-        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
         data.savings[category].push(newEntry);
-        
-        if (category === 'main') {
-            data.savingsMain += amount;
-            data.wallet -= amount;
-        } else if (category === 'emergency') {
-            data.savingsEmergency += amount;
-            data.wallet -= amount;
-        }
-
         saveData(data);
         document.getElementById('amount').value = '';
         checkInput();
     };
 
     const addWithdrawal = (category) => {
-        const amount = parseFloat(document.getElementById('amount').value);
+        const amount = document.getElementById('amount').value;
         if (!amount) return;
-        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
         data.withdrawals[category].push(newEntry);
-        
-        if (category === 'main') {
-            data.savingsMain -= amount;
-            data.wallet += amount;
-        } else if (category === 'emergency') {
-            data.savingsEmergency -= amount;
-            data.wallet += amount;
-        }
-
         saveData(data);
         document.getElementById('amount').value = '';
         checkInput();
@@ -264,22 +236,81 @@
             }
         };
 
-        let tableContent = '';
-        for (let category in report) {
-            const entries = report[category];
-            for (let entry of entries) {
-                tableContent += `<tr><td>${category}</td><td>${entry.amount}</td><td>${entry.date}</td></tr>`;
-            }
-        }
+        renderReport(report);
+        updateSummary(report);
+    };
 
-        document.getElementById('reportTable').querySelector('tbody').innerHTML = tableContent;
+    const renderReport = (report) => {
+        const tableBody = document.getElementById('reportTable').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = '';
+
+        const addRow = (type, data) => {
+            data.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = <td>${type}</td><td>${entry.amount}</td><td>${entry.date}</td>;
+                tableBody.appendChild(row);
+            });
+        };
+
+        addRow('Доход', report.income);
+        addRow('Расход', report.expenses);
+        addRow('Накопления', report.savings.main);
+        addRow('Экстренные накопления', report.savings.emergency);
+        addRow('Вывод из накоплений', report.withdrawals.main);
+        addRow('Вывод из экстренных накоплений', report.withdrawals.emergency);
+    };
+
+    const updateSummary = (report) => {
+        const totalSpent = report.expenses.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalDeposited = report.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalEmergencyDeposited = report.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnMain = report.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnEmergency = report.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+
+        const walletBalance = totalDeposited - totalWithdrawnMain - totalWithdrawnEmergency;
+        const mainAccountBalance = totalDeposited - totalWithdrawnMain;
+        const emergencyAccountBalance = totalEmergencyDeposited - totalWithdrawnEmergency;
+
+        document.getElementById('totalSpent').textContent = totalSpent;
+        document.getElementById('totalDeposited').textContent = totalDeposited;
+        document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited;
+        document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain;
+        document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency;
+        document.getElementById('walletBalance').textContent = walletBalance;
+        document.getElementById('mainAccountBalance').textContent = mainAccountBalance;
+        document.getElementById('emergencyAccountBalance').textContent = emergencyAccountBalance;
+    };
+
+    const saveToFile = () => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'finance_data.json';
+        link.click();
+    };
+
+    const loadFromFile = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                saveData(JSON.parse(content));
+                alert("Данные загружены успешно!");
+                checkInput();
+            };
+            reader.readAsText(file);
+        }
     };
 
     const clearData = () => {
-        localStorage.clear();
-        location.reload();
+        if (confirm("Вы уверены, что хотите очистить все данные?")) {
+            localStorage.removeItem('financeData');
+            data = { income: [], expenses: [], savings: { main: [], emergency: [] }, withdrawals: { main: [], emergency: [] } };
+            renderReport(data);
+            updateSummary(data);
+        }
     };
 </script>
-
 </body>
 </html>
