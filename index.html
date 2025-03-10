@@ -254,10 +254,10 @@
 
         addRow('Доход', report.income);
         addRow('Расход', report.expenses);
-        addRow('Накопительное', report.savings.main);
-        addRow('Экстренные', report.savings.emergency);
-        addRow('Взято с накопительного', report.withdrawals.main);
-        addRow('Взято с экстренного', report.withdrawals.emergency);
+        addRow('Накопления', report.savings.main);
+        addRow('Экстренные накопления', report.savings.emergency);
+        addRow('Вывод из накоплений', report.withdrawals.main);
+        addRow('Вывод из экстренных накоплений', report.withdrawals.emergency);
     };
 
     const updateSummary = (report) => {
@@ -267,18 +267,22 @@
         const totalWithdrawnMain = report.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
         const totalWithdrawnEmergency = report.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
 
+        const walletBalance = totalDeposited - totalWithdrawnMain - totalWithdrawnEmergency;
+        const mainAccountBalance = totalDeposited - totalWithdrawnMain;
+        const emergencyAccountBalance = totalEmergencyDeposited - totalWithdrawnEmergency;
+
         document.getElementById('totalSpent').textContent = totalSpent;
         document.getElementById('totalDeposited').textContent = totalDeposited;
         document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited;
         document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain;
         document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency;
-        document.getElementById('walletBalance').textContent = totalDeposited - totalSpent - totalWithdrawnMain - totalWithdrawnEmergency;
-        document.getElementById('mainAccountBalance').textContent = totalDeposited - totalWithdrawnMain;
-        document.getElementById('emergencyAccountBalance').textContent = totalEmergencyDeposited - totalWithdrawnEmergency;
+        document.getElementById('walletBalance').textContent = walletBalance;
+        document.getElementById('mainAccountBalance').textContent = mainAccountBalance;
+        document.getElementById('emergencyAccountBalance').textContent = emergencyAccountBalance;
     };
 
     const saveToFile = () => {
-        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = 'finance_data.json';
@@ -287,34 +291,26 @@
 
     const loadFromFile = (event) => {
         const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const newData = JSON.parse(e.target.result);
-                saveData(newData);
-                alert('Данные успешно загружены!');
-            } catch (err) {
-                alert('Ошибка загрузки данных');
-            }
-        };
-        reader.readAsText(file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                saveData(JSON.parse(content));
+                alert("Данные загружены успешно!");
+                checkInput();
+            };
+            reader.readAsText(file);
+        }
     };
 
     const clearData = () => {
-        if (confirm('Вы уверены, что хотите очистить все данные?')) {
-            saveData({
-                income: [],
-                expenses: [],
-                savings: { main: [], emergency: [] },
-                withdrawals: { main: [], emergency: [] }
-            });
-            renderReport({});
-            updateSummary({});
+        if (confirm("Вы уверены, что хотите очистить все данные?")) {
+            localStorage.removeItem('financeData');
+            data = { income: [], expenses: [], savings: { main: [], emergency: [] }, withdrawals: { main: [], emergency: [] } };
+            renderReport(data);
+            updateSummary(data);
         }
     };
 </script>
-
 </body>
 </html>
