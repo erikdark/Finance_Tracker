@@ -166,12 +166,14 @@
     const saveData = (newData) => {
         localStorage.setItem('financeData', JSON.stringify(newData));
         data = newData;
+        updateSummary();
     };
 
     const loadData = () => {
         const storedData = localStorage.getItem('financeData');
         if (storedData) {
             data = JSON.parse(storedData);
+            updateSummary();
         }
     };
 
@@ -218,6 +220,28 @@
         checkInput();
     };
 
+    const updateSummary = () => {
+        const totalIncome = data.income.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalSpent = data.expenses.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalDeposited = data.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalEmergencyDeposited = data.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnMain = data.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnEmergency = data.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+
+        const walletBalance = totalIncome - totalSpent - totalDeposited - totalEmergencyDeposited + totalWithdrawnMain + totalWithdrawnEmergency;
+        const mainAccountBalance = totalDeposited - totalWithdrawnMain;
+        const emergencyAccountBalance = totalEmergencyDeposited - totalWithdrawnEmergency;
+
+        document.getElementById('totalSpent').textContent = totalSpent;
+        document.getElementById('totalDeposited').textContent = totalDeposited;
+        document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited;
+        document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain;
+        document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency;
+        document.getElementById('walletBalance').textContent = walletBalance;
+        document.getElementById('mainAccountBalance').textContent = mainAccountBalance;
+        document.getElementById('emergencyAccountBalance').textContent = emergencyAccountBalance;
+    };
+
     const generateReport = (months) => {
         const now = new Date();
         const pastDate = new Date();
@@ -237,7 +261,6 @@
         };
 
         renderReport(report);
-        updateSummary(report);
     };
 
     const renderReport = (report) => {
@@ -258,23 +281,6 @@
         addRow('Экстренные', report.savings.emergency);
         addRow('Взято с накопительного', report.withdrawals.main);
         addRow('Взято с экстренного', report.withdrawals.emergency);
-    };
-
-    const updateSummary = (report) => {
-        const totalSpent = report.expenses.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalDeposited = report.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalEmergencyDeposited = report.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalWithdrawnMain = report.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalWithdrawnEmergency = report.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
-
-        document.getElementById('totalSpent').textContent = totalSpent;
-        document.getElementById('totalDeposited').textContent = totalDeposited;
-        document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited;
-        document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain;
-        document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency;
-        document.getElementById('walletBalance').textContent = totalDeposited - totalSpent - totalWithdrawnMain - totalWithdrawnEmergency;
-        document.getElementById('mainAccountBalance').textContent = totalDeposited - totalWithdrawnMain;
-        document.getElementById('emergencyAccountBalance').textContent = totalEmergencyDeposited - totalWithdrawnEmergency;
     };
 
     const saveToFile = () => {
