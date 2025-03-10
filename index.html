@@ -3,310 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Финансовый отчет</title>
+    <title>Финансовый учёт</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
 
         .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-
-        .box {
             background-color: #fff;
             padding: 20px;
-            margin: 10px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 48%;
-        }
-
-        .box h3 {
-            margin-top: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
         }
 
         .button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
+            padding: 10px;
+            width: 100%;
+            margin: 5px 0;
             border-radius: 5px;
+            color: white;
+            font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
         }
 
-        .button:disabled {
-            background-color: #ddd;
-            cursor: not-allowed;
+        .button:active {
+            opacity: 0.7;
         }
+
+        .income { background-color: #4CAF50; }
+        .expenses { background-color: #F44336; }
+        .savings-main { background-color: #2196F3; }
+        .savings-emergency { background-color: #FFC107; }
+        .withdrawals-main { background-color: #9C27B0; }
+        .withdrawals-emergency { background-color: #FF5722; }
+        .file { background-color: #607D8B; }
+        .clear { background-color: #FF9800; }
 
         input[type="number"] {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
+            padding: 8px;
+            margin: 10px 0;
             border-radius: 5px;
+            border: 1px solid #ccc;
         }
 
-        .summary {
-            background-color: #e3f2fd;
-            padding: 20px;
-            border-radius: 8px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
         }
 
-        .summary p {
-            margin: 5px 0;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
         }
 
-        .actions {
-            margin-top: 20px;
-        }
-
-        .actions input[type="file"] {
-            margin-top: 10px;
-        }
-
-        .actions button {
-            margin-left: 10px;
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
-    <h1>Финансовый отчет</h1>
-    <div class="container">
-        <div class="box">
-            <h3>Доход</h3>
-            <input type="number" id="income" placeholder="Введите сумму дохода">
-            <button class="button" id="addIncome" disabled>Добавить доход</button>
-        </div>
 
-        <div class="box">
-            <h3>Расход</h3>
-            <input type="number" id="expense" placeholder="Введите сумму расхода">
-            <button class="button" id="addExpense" disabled>Добавить расход</button>
-        </div>
+<div class="container">
+    <h2>Финансовый учёт</h2>
+    <input type="number" id="amount" placeholder="Введите сумму" oninput="checkInput()" />
+    <button class="button income" id="incomeBtn" onclick="addEntry('income')" disabled>Получил</button>
+    <button class="button expenses" id="expensesBtn" onclick="addEntry('expenses')" disabled>Потратил</button>
+    <button class="button savings-main" id="savingsMainBtn" onclick="addSavings('main')" disabled>Отложил в накопительный</button>
+    <button class="button savings-emergency" id="savingsEmergencyBtn" onclick="addSavings('emergency')" disabled>Отложил в экстренный</button>
+    <button class="button withdrawals-main" id="withdrawalsMainBtn" onclick="addWithdrawal('main')" disabled>Взял из накопительных</button>
+    <button class="button withdrawals-emergency" id="withdrawalsEmergencyBtn" onclick="addWithdrawal('emergency')" disabled>Взял из экстренных</button>
 
-        <div class="box">
-            <h3>Отложено на накопительный счет</h3>
-            <input type="number" id="saveMain" placeholder="Введите сумму для накопительного">
-            <button class="button" id="addSaveMain" disabled>Отложить на накопительный</button>
-        </div>
+    <h3>Отчёты</h3>
+    <button class="button file" onclick="generateReport(1)">За месяц</button>
+    <button class="button file" onclick="generateReport(3)">За 3 месяца</button>
+    <button class="button file" onclick="generateReport(6)">За 6 месяцев</button>
 
-        <div class="box">
-            <h3>Отложено на экстренный счет</h3>
-            <input type="number" id="saveEmergency" placeholder="Введите сумму для экстренного">
-            <button class="button" id="addSaveEmergency" disabled>Отложить на экстренный</button>
-        </div>
+    <h3>Файл</h3>
+    <button class="button file" onclick="saveToFile()">Сохранить в файл</button>
+    <input type="file" id="fileInput" onchange="loadFromFile(event)" />
 
-        <div class="box">
-            <h3>Снятие с накопительного счета</h3>
-            <input type="number" id="withdrawMain" placeholder="Введите сумму для снятия">
-            <button class="button" id="withdrawMainBtn" disabled>Снять с накопительного</button>
-        </div>
+    <h3>Отчёт</h3>
+    <table id="reportTable">
+        <thead>
+            <tr>
+                <th>Тип</th>
+                <th>Сумма</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Данные отчета будут добавляться сюда -->
+        </tbody>
+    </table>
 
-        <div class="box">
-            <h3>Снятие с экстренного счета</h3>
-            <input type="number" id="withdrawEmergency" placeholder="Введите сумму для снятия">
-            <button class="button" id="withdrawEmergencyBtn" disabled>Снять с экстренного</button>
-        </div>
-    </div>
+    <h3>Остатки и суммы</h3>
+    <table id="summaryTable">
+        <thead>
+            <tr>
+                <th>Описание</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Всего потратил</td>
+                <td id="totalSpent">0</td>
+            </tr>
+            <tr>
+                <td>Положил на счет</td>
+                <td id="totalDeposited">0</td>
+            </tr>
+            <tr>
+                <td>Положил на экстренный счет</td>
+                <td id="totalEmergencyDeposited">0</td>
+            </tr>
+            <tr>
+                <td>Взял с накопительного</td>
+                <td id="totalWithdrawnMain">0</td>
+            </tr>
+            <tr>
+                <td>Взял с экстренного</td>
+                <td id="totalWithdrawnEmergency">0</td>
+            </tr>
+            <tr>
+                <td>Остаток на кошельке</td>
+                <td id="walletBalance">0</td>
+            </tr>
+            <tr>
+                <td>Остаток на накопительном</td>
+                <td id="mainAccountBalance">0</td>
+            </tr>
+            <tr>
+                <td>Остаток на экстренном</td>
+                <td id="emergencyAccountBalance">0</td>
+            </tr>
+        </tbody>
+    </table>
 
-    <div class="summary">
-        <h3>Итоги:</h3>
-        <p>Всего потратил: <span id="totalSpent">0</span></p>
-        <p>Положил на счет: <span id="totalDeposited">0</span></p>
-        <p>Положил на экстренный счет: <span id="totalEmergencyDeposited">0</span></p>
-        <p>Взял с накопительного: <span id="totalWithdrawnMain">0</span></p>
-        <p>Взял с экстренного: <span id="totalWithdrawnEmergency">0</span></p>
-        <p>Остаток на кошельке: <span id="walletBalance">0</span></p>
-        <p>Остаток на накопительном счете: <span id="mainAccountBalance">0</span></p>
-        <p>Остаток на экстренном счете: <span id="emergencyAccountBalance">0</span></p>
-    </div>
+    <button class="button clear" onclick="clearData()">Очистить</button>
+</div>
 
-    <div class="actions">
-        <button class="button" onclick="clearData()">Очистить все данные</button>
-        <button class="button" onclick="saveToFile()">Сохранить данные</button>
-        <input type="file" id="fileInput" onchange="loadFromFile(event)">
-    </div>
+<script>
+    let data = {
+        income: [],
+        expenses: [],
+        savings: { main: [], emergency: [] },
+        withdrawals: { main: [], emergency: [] }
+    };
 
-    <script>
-        let data = {
-            income: [],
-            expenses: [],
-            savings: { main: [], emergency: [] },
-            withdrawals: { main: [], emergency: [] }
-        };
+    const saveData = (newData) => {
+        localStorage.setItem('financeData', JSON.stringify(newData));
+        data = newData;
+    };
 
-        const incomeInput = document.getElementById('income');
-        const expenseInput = document.getElementById('expense');
-        const saveMainInput = document.getElementById('saveMain');
-        const saveEmergencyInput = document.getElementById('saveEmergency');
-        const withdrawMainInput = document.getElementById('withdrawMain');
-        const withdrawEmergencyInput = document.getElementById('withdrawEmergency');
+    const loadData = () => {
+        const storedData = localStorage.getItem('financeData');
+        if (storedData) {
+            data = JSON.parse(storedData);
+        }
+    };
 
-        const addIncomeButton = document.getElementById('addIncome');
-        const addExpenseButton = document.getElementById('addExpense');
-        const addSaveMainButton = document.getElementById('addSaveMain');
-        const addSaveEmergencyButton = document.getElementById('addSaveEmergency');
-        const withdrawMainBtn = document.getElementById('withdrawMainBtn');
-        const withdrawEmergencyBtn = document.getElementById('withdrawEmergencyBtn');
+    loadData();
 
-        // Enable buttons when input is non-empty
-        const checkInputValidity = () => {
-            const incomeValue = incomeInput.value;
-            const expenseValue = expenseInput.value;
-            const saveMainValue = saveMainInput.value;
-            const saveEmergencyValue = saveEmergencyInput.value;
-            const withdrawMainValue = withdrawMainInput.value;
-            const withdrawEmergencyValue = withdrawEmergencyInput.value;
+    const checkInput = () => {
+        const amount = document.getElementById('amount').value;
+        const buttons = [
+            'incomeBtn', 'expensesBtn', 'savingsMainBtn', 'savingsEmergencyBtn', 'withdrawalsMainBtn', 'withdrawalsEmergencyBtn'
+        ];
 
-            addIncomeButton.disabled = !incomeValue;
-            addExpenseButton.disabled = !expenseValue;
-            addSaveMainButton.disabled = !saveMainValue;
-            addSaveEmergencyButton.disabled = !saveEmergencyValue;
-            withdrawMainBtn.disabled = !withdrawMainValue;
-            withdrawEmergencyBtn.disabled = !withdrawEmergencyValue;
-        };
-
-        incomeInput.addEventListener('input', checkInputValidity);
-        expenseInput.addEventListener('input', checkInputValidity);
-        saveMainInput.addEventListener('input', checkInputValidity);
-        saveEmergencyInput.addEventListener('input', checkInputValidity);
-        withdrawMainInput.addEventListener('input', checkInputValidity);
-        withdrawEmergencyInput.addEventListener('input', checkInputValidity);
-
-        // Add income
-        addIncomeButton.addEventListener('click', () => {
-            const value = parseFloat(incomeInput.value);
-            data.income.push(value);
-            renderReport(data);
-            updateSummary(data);
-            incomeInput.value = '';
-            checkInputValidity();
+        buttons.forEach(btnId => {
+            document.getElementById(btnId).disabled = !amount;
         });
+    };
 
-        // Add expense
-        addExpenseButton.addEventListener('click', () => {
-            const value = parseFloat(expenseInput.value);
-            data.expenses.push(value);
-            renderReport(data);
-            updateSummary(data);
-            expenseInput.value = '';
-            checkInputValidity();
-        });
+    const addEntry = (category) => {
+        const amount = document.getElementById('amount').value;
+        if (!amount) return;
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+        data[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
+        checkInput();
+    };
 
-        // Add to main savings
-        addSaveMainButton.addEventListener('click', () => {
-            const value = parseFloat(saveMainInput.value);
-            data.savings.main.push(value);
-            renderReport(data);
-            updateSummary(data);
-            saveMainInput.value = '';
-            checkInputValidity();
-        });
+    const addSavings = (category) => {
+        const amount = document.getElementById('amount').value;
+        if (!amount) return;
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+        data.savings[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
+        checkInput();
+    };
 
-        // Add to emergency savings
-        addSaveEmergencyButton.addEventListener('click', () => {
-            const value = parseFloat(saveEmergencyInput.value);
-            data.savings.emergency.push(value);
-            renderReport(data);
-            updateSummary(data);
-            saveEmergencyInput.value = '';
-            checkInputValidity();
-        });
+    const addWithdrawal = (category) => {
+        const amount = document.getElementById('amount').value;
+        if (!amount) return;
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+        data.withdrawals[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
+        checkInput();
+    };
 
-        // Withdraw from main savings
-        withdrawMainBtn.addEventListener('click', () => {
-            const value = parseFloat(withdrawMainInput.value);
-            data.withdrawals.main.push(value);
-            renderReport(data);
-            updateSummary(data);
-            withdrawMainInput.value = '';
-            checkInputValidity();
-        });
+    const generateReport = (months) => {
+        const now = new Date();
+        const pastDate = new Date();
+        pastDate.setMonth(now.getMonth() - months);
 
-        // Withdraw from emergency savings
-        withdrawEmergencyBtn.addEventListener('click', () => {
-            const value = parseFloat(withdrawEmergencyInput.value);
-            data.withdrawals.emergency.push(value);
-            renderReport(data);
-            updateSummary(data);
-            withdrawEmergencyInput.value = '';
-            checkInputValidity();
-        });
-
-        // Render report
-        const renderReport = (data) => {
-            document.getElementById('totalSpent').innerText = data.expenses.reduce((a, b) => a + b, 0);
-            document.getElementById('totalDeposited').innerText = data.savings.main.reduce((a, b) => a + b, 0) + data.savings.emergency.reduce((a, b) => a + b, 0);
-            document.getElementById('totalEmergencyDeposited').innerText = data.savings.emergency.reduce((a, b) => a + b, 0);
-            document.getElementById('totalWithdrawnMain').innerText = data.withdrawals.main.reduce((a, b) => a + b, 0);
-            document.getElementById('totalWithdrawnEmergency').innerText = data.withdrawals.emergency.reduce((a, b) => a + b, 0);
-            document.getElementById('walletBalance').innerText = data.income.reduce((a, b) => a + b, 0) - data.expenses.reduce((a, b) => a + b, 0);
-            document.getElementById('mainAccountBalance').innerText = data.savings.main.reduce((a, b) => a + b, 0) - data.withdrawals.main.reduce((a, b) => a + b, 0);
-            document.getElementById('emergencyAccountBalance').innerText = data.savings.emergency.reduce((a, b) => a + b, 0) - data.withdrawals.emergency.reduce((a, b) => a + b, 0);
-        };
-
-        // Update summary
-        const updateSummary = (data) => {
-            renderReport(data);
-        };
-
-        // Save data to file
-        const saveToFile = () => {
-            const fileContent = JSON.stringify(data);
-            const blob = new Blob([fileContent], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'financeData.json';
-            link.click();
-        };
-
-        // Load data from file
-        const loadFromFile = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const loadedData = JSON.parse(e.target.result);
-                    saveData(loadedData);
-                    renderReport(loadedData);
-                    updateSummary(loadedData);
-                } catch (error) {
-                    alert('Ошибка при загрузке файла.');
-                }
-            };
-            reader.readAsText(file);
-        };
-
-        // Clear all data
-        const clearData = () => {
-            if (confirm('Вы уверены, что хотите очистить все данные?')) {
-                data = {
-                    income: [],
-                    expenses: [],
-                    savings: { main: [], emergency: [] },
-                    withdrawals: { main: [], emergency: [] }
-                };
-                renderReport(data);
-                updateSummary(data);
-                checkInputValidity();
+        const report = {
+            income: data.income.filter(i => new Date(i.date) >= pastDate),
+            expenses: data.expenses.filter(e => new Date(e.date) >= pastDate),
+            savings: {
+                main: data.savings.main.filter(s => new Date(s.date) >= pastDate),
+                emergency: data.savings.emergency.filter(s => new Date(s.date) >= pastDate)
+            },
+            withdrawals: {
+                main: data.withdrawals.main.filter(w => new Date(w.date) >= pastDate),
+                emergency: data.withdrawals.emergency.filter(w => new Date(w.date) >= pastDate)
             }
         };
-    </script>
+
+        renderReport(report);
+        updateSummary(report);
+    };
+
+    const renderReport = (report) => {
+        const tableBody = document.getElementById('reportTable').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = '';
+
+        const addRow = (type, data) => {
+            data.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${type}</td><td>${entry.amount}</td><td>${entry.date}</td>`;
+                tableBody.appendChild(row);
+            });
+        };
+
+        addRow('Доход', report.income);
+        addRow('Расход', report.expenses);
+        addRow('Накопительное', report.savings.main);
+        addRow('Экстренные', report.savings.emergency);
+        addRow('Взято с накопительного', report.withdrawals.main);
+        addRow('Взято с экстренного', report.withdrawals.emergency);
+    };
+
+    const updateSummary = (report) => {
+        const totalSpent = report.expenses.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalDeposited = report.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalEmergencyDeposited = report.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnMain = report.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnEmergency = report.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+
+        document.getElementById('totalSpent').textContent = totalSpent;
+        document.getElementById('totalDeposited').textContent = totalDeposited;
+        document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited;
+        document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain;
+        document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency;
+        document.getElementById('walletBalance').textContent = totalDeposited - totalSpent - totalWithdrawnMain - totalWithdrawnEmergency;
+        document.getElementById('mainAccountBalance').textContent = totalDeposited - totalWithdrawnMain;
+        document.getElementById('emergencyAccountBalance').textContent = totalEmergencyDeposited - totalWithdrawnEmergency;
+    };
+
+    const saveToFile = () => {
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'finance_data.json';
+        link.click();
+    };
+
+    const loadFromFile = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const newData = JSON.parse(e.target.result);
+                saveData(newData);
+                alert('Данные успешно загружены!');
+            } catch (err) {
+                alert('Ошибка загрузки данных');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const clearData = () => {
+        if (confirm('Вы уверены, что хотите очистить все данные?')) {
+            saveData({
+                income: [],
+                expenses: [],
+                savings: { main: [], emergency: [] },
+                withdrawals: { main: [], emergency: [] }
+            });
+            renderReport({});
+            updateSummary({});
+        }
+    };
+</script>
+
 </body>
 </html>
