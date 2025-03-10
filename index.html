@@ -1,0 +1,112 @@
+import React, { useState, useEffect } from 'react';
+
+const App = () => {
+    const [data, setData] = useState({ income: [], expenses: [], savings: { main: [], emergency: [] }, withdrawals: { main: [], emergency: [] } });
+    const [amount, setAmount] = useState('');
+    const [type, setType] = useState('income');
+
+    useEffect(() => {
+        const storedData = localStorage.getItem('financeData');
+        if (storedData) {
+            setData(JSON.parse(storedData));
+        }
+    }, []);
+
+    const saveData = (newData) => {
+        localStorage.setItem('financeData', JSON.stringify(newData));
+        setData(newData);
+    };
+
+    const addEntry = (category) => {
+        if (!amount) return;
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+        const newData = { ...data, [category]: [...data[category], newEntry] };
+        saveData(newData);
+        setAmount('');
+    };
+
+    const addSavings = (category) => {
+        if (!amount) return;
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+        const newData = { ...data, savings: { ...data.savings, [category]: [...data.savings[category], newEntry] } };
+        saveData(newData);
+        setAmount('');
+    };
+
+    const addWithdrawal = (category) => {
+        if (!amount) return;
+        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+        const newData = { ...data, withdrawals: { ...data.withdrawals, [category]: [...data.withdrawals[category], newEntry] } };
+        saveData(newData);
+        setAmount('');
+    };
+
+    const getReport = (months) => {
+        const now = new Date();
+        const pastDate = new Date();
+        pastDate.setMonth(now.getMonth() - months);
+        return {
+            income: data.income.filter(i => new Date(i.date) >= pastDate),
+            expenses: data.expenses.filter(e => new Date(e.date) >= pastDate),
+            savings: {
+                main: data.savings.main.filter(s => new Date(s.date) >= pastDate),
+                emergency: data.savings.emergency.filter(s => new Date(s.date) >= pastDate)
+            },
+            withdrawals: {
+                main: data.withdrawals.main.filter(w => new Date(w.date) >= pastDate),
+                emergency: data.withdrawals.emergency.filter(w => new Date(w.date) >= pastDate)
+            }
+        };
+    };
+
+    const saveToFile = () => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'financeData.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const loadFromFile = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const loadedData = JSON.parse(e.target.result);
+                saveData(loadedData);
+            } catch (error) {
+                alert('Ошибка при загрузке файла. Убедитесь, что это правильный JSON-файл.');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md text-center">
+                <h2 className="text-xl font-bold mb-4">Финансовый учёт</h2>
+                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full p-2 border rounded mb-2" placeholder="Введите сумму" />
+                <button onClick={() => addEntry('income')} className="w-full bg-blue-500 text-white p-2 rounded mb-2">Получил</button>
+                <button onClick={() => addEntry('expenses')} className="w-full bg-red-500 text-white p-2 rounded mb-2">Потратил</button>
+                <button onClick={() => addSavings('main')} className="w-full bg-green-500 text-white p-2 rounded mb-2">Отложил в накопительный</button>
+                <button onClick={() => addSavings('emergency')} className="w-full bg-yellow-500 text-white p-2 rounded mb-2">Отложил в экстренный</button>
+                <button onClick={() => addWithdrawal('main')} className="w-full bg-purple-500 text-white p-2 rounded mb-2">Взял из накопительных</button>
+                <button onClick={() => addWithdrawal('emergency')} className="w-full bg-orange-500 text-white p-2 rounded mb-2">Взял из экстренных</button>
+                <h3 className="text-lg font-bold mt-4">Отчёты</h3>
+                <button onClick={() => console.log(getReport(1))} className="w-full bg-gray-500 text-white p-2 rounded mt-2">За месяц</button>
+                <button onClick={() => console.log(getReport(3))} className="w-full bg-gray-600 text-white p-2 rounded mt-2">За 3 месяца</button>
+                <button onClick={() => console.log(getReport(6))} className="w-full bg-gray-700 text-white p-2 rounded mt-2">За 6 месяцев</button>
+                <h3 className="text-lg font-bold mt-4">Файл</h3>
+                <button onClick={saveToFile} className="w-full bg-gray-800 text-white p-2 rounded mt-2">Сохранить в файл</button>
+                <input type="file" onChange={loadFromFile} className="w-full mt-2" />
+            </div>
+        </div>
+    );
+};
+
+export default App;
