@@ -1,51 +1,143 @@
-import React, { useState, useEffect } from 'react';
-
-const App = () => {
-    const [data, setData] = useState({ income: [], expenses: [], savings: { main: [], emergency: [] }, withdrawals: { main: [], emergency: [] } });
-    const [amount, setAmount] = useState('');
-    const [type, setType] = useState('income');
-
-    useEffect(() => {
-        const storedData = localStorage.getItem('financeData');
-        if (storedData) {
-            setData(JSON.parse(storedData));
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый учёт</title>
+    <style>
+        /* Добавьте свой CSS стиль или используйте стандартные стили */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
-    }, []);
 
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .button {
+            padding: 10px;
+            width: 100%;
+            margin: 5px 0;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .button:active {
+            opacity: 0.7;
+        }
+
+        .income { background-color: #4CAF50; }
+        .expenses { background-color: #F44336; }
+        .savings-main { background-color: #2196F3; }
+        .savings-emergency { background-color: #FFC107; }
+        .withdrawals-main { background-color: #9C27B0; }
+        .withdrawals-emergency { background-color: #FF5722; }
+        .file { background-color: #607D8B; }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Финансовый учёт</h2>
+    <input type="number" id="amount" placeholder="Введите сумму" />
+    <button class="button income" onclick="addEntry('income')">Получил</button>
+    <button class="button expenses" onclick="addEntry('expenses')">Потратил</button>
+    <button class="button savings-main" onclick="addSavings('main')">Отложил в накопительный</button>
+    <button class="button savings-emergency" onclick="addSavings('emergency')">Отложил в экстренный</button>
+    <button class="button withdrawals-main" onclick="addWithdrawal('main')">Взял из накопительных</button>
+    <button class="button withdrawals-emergency" onclick="addWithdrawal('emergency')">Взял из экстренных</button>
+
+    <h3>Отчёты</h3>
+    <button class="button file" onclick="generateReport(1)">За месяц</button>
+    <button class="button file" onclick="generateReport(3)">За 3 месяца</button>
+    <button class="button file" onclick="generateReport(6)">За 6 месяцев</button>
+
+    <h3>Файл</h3>
+    <button class="button file" onclick="saveToFile()">Сохранить в файл</button>
+    <input type="file" id="fileInput" onchange="loadFromFile(event)" />
+</div>
+
+<script>
+    let data = {
+        income: [],
+        expenses: [],
+        savings: { main: [], emergency: [] },
+        withdrawals: { main: [], emergency: [] }
+    };
+
+    // Сохранение данных в localStorage
     const saveData = (newData) => {
         localStorage.setItem('financeData', JSON.stringify(newData));
-        setData(newData);
+        data = newData;
     };
 
+    // Загрузка данных из localStorage
+    const loadData = () => {
+        const storedData = localStorage.getItem('financeData');
+        if (storedData) {
+            data = JSON.parse(storedData);
+        }
+    };
+
+    loadData(); // Загружаем данные при инициализации
+
+    // Добавление записи (доход, расход, сбережения или снятие)
     const addEntry = (category) => {
+        const amount = document.getElementById('amount').value;
         if (!amount) return;
         const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
-        const newData = { ...data, [category]: [...data[category], newEntry] };
-        saveData(newData);
-        setAmount('');
+        data[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
     };
 
+    // Добавление сбережений
     const addSavings = (category) => {
+        const amount = document.getElementById('amount').value;
         if (!amount) return;
         const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
-        const newData = { ...data, savings: { ...data.savings, [category]: [...data.savings[category], newEntry] } };
-        saveData(newData);
-        setAmount('');
+        data.savings[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
     };
 
+    // Добавление снятия средств
     const addWithdrawal = (category) => {
+        const amount = document.getElementById('amount').value;
         if (!amount) return;
         const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
-        const newData = { ...data, withdrawals: { ...data.withdrawals, [category]: [...data.withdrawals[category], newEntry] } };
-        saveData(newData);
-        setAmount('');
+        data.withdrawals[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
     };
 
-    const getReport = (months) => {
+    // Генерация отчёта за указанный период
+    const generateReport = (months) => {
         const now = new Date();
         const pastDate = new Date();
         pastDate.setMonth(now.getMonth() - months);
-        return {
+        const report = {
             income: data.income.filter(i => new Date(i.date) >= pastDate),
             expenses: data.expenses.filter(e => new Date(e.date) >= pastDate),
             savings: {
@@ -57,8 +149,10 @@ const App = () => {
                 emergency: data.withdrawals.emergency.filter(w => new Date(w.date) >= pastDate)
             }
         };
+        console.log(report);
     };
 
+    // Сохранение данных в файл
     const saveToFile = () => {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -71,6 +165,7 @@ const App = () => {
         URL.revokeObjectURL(url);
     };
 
+    // Загрузка данных из файла
     const loadFromFile = (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -85,28 +180,7 @@ const App = () => {
         };
         reader.readAsText(file);
     };
+</script>
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-            <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md text-center">
-                <h2 className="text-xl font-bold mb-4">Финансовый учёт</h2>
-                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full p-2 border rounded mb-2" placeholder="Введите сумму" />
-                <button onClick={() => addEntry('income')} className="w-full bg-blue-500 text-white p-2 rounded mb-2">Получил</button>
-                <button onClick={() => addEntry('expenses')} className="w-full bg-red-500 text-white p-2 rounded mb-2">Потратил</button>
-                <button onClick={() => addSavings('main')} className="w-full bg-green-500 text-white p-2 rounded mb-2">Отложил в накопительный</button>
-                <button onClick={() => addSavings('emergency')} className="w-full bg-yellow-500 text-white p-2 rounded mb-2">Отложил в экстренный</button>
-                <button onClick={() => addWithdrawal('main')} className="w-full bg-purple-500 text-white p-2 rounded mb-2">Взял из накопительных</button>
-                <button onClick={() => addWithdrawal('emergency')} className="w-full bg-orange-500 text-white p-2 rounded mb-2">Взял из экстренных</button>
-                <h3 className="text-lg font-bold mt-4">Отчёты</h3>
-                <button onClick={() => console.log(getReport(1))} className="w-full bg-gray-500 text-white p-2 rounded mt-2">За месяц</button>
-                <button onClick={() => console.log(getReport(3))} className="w-full bg-gray-600 text-white p-2 rounded mt-2">За 3 месяца</button>
-                <button onClick={() => console.log(getReport(6))} className="w-full bg-gray-700 text-white p-2 rounded mt-2">За 6 месяцев</button>
-                <h3 className="text-lg font-bold mt-4">Файл</h3>
-                <button onClick={saveToFile} className="w-full bg-gray-800 text-white p-2 rounded mt-2">Сохранить в файл</button>
-                <input type="file" onChange={loadFromFile} className="w-full mt-2" />
-            </div>
-        </div>
-    );
-};
-
-export default App;
+</body>
+</html>
