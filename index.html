@@ -68,7 +68,6 @@
 </head>
 <body>
 <div class="container">
-    <!-- Весь интерфейс остался без изменений -->
     <h2>Финансовый учёт</h2>
     <input type="number" id="amount" placeholder="Введите сумму" oninput="checkInput()" />
     <button class="button income" id="incomeBtn" onclick="addEntry('income')" disabled>Получил</button>
@@ -76,7 +75,7 @@
     <button class="button savings-main" id="savingsMainBtn" onclick="addSavings('main')" disabled>Отложил в накопительный</button>
     <button class="button savings-emergency" id="savingsEmergencyBtn" onclick="addSavings('emergency')" disabled>Отложил в экстренный</button>
     <button class="button withdrawals-main" id="withdrawalsMainBtn" onclick="addWithdrawal('main')" disabled>Взял из накопительных</button>
-    <button class="button withdrawals-emergency" id="savingsEmergencyBtn" onclick="addWithdrawal('emergency')" disabled>Взял из экстренных</button>
+    <button class="button withdrawals-emergency" id="withdrawalsEmergencyBtn" onclick="addWithdrawal('emergency')" disabled>Взял из экстренных</button>
     <h3>Отчёты</h3>
     <button class="button file" onclick="generateReport(1)">За месяц</button>
     <button class="button file" onclick="generateReport(3)">За 3 месяца</button>
@@ -169,9 +168,15 @@
             'withdrawalsMainBtn', 'withdrawalsEmergencyBtn'
         ];
         buttons.forEach(btnId => {
-            document.getElementById(btnId).disabled = !amount;
+            const btn = document.getElementById(btnId);
+            if (btn) btn.disabled = !amount; // Проверка на существование кнопки
         });
     };
+
+    // Загрузка DOM и первоначальная проверка
+    document.addEventListener('DOMContentLoaded', function() {
+        checkInput();
+    });
 
     const addEntry = (category) => {
         const amount = parseFloat(document.getElementById('amount').value);
@@ -228,7 +233,8 @@
     };
 
     const renderReport = (report) => {
-        const tableBody = document.getElementById('reportTable').getElementsByTagName('tbody')[0];
+        const tableBody = document.getElementById('reportTable').querySelector('tbody');
+        if (!tableBody) return;
         tableBody.innerHTML = '';
         
         const addRow = (type, entries) => {
@@ -289,6 +295,7 @@
                 const newData = JSON.parse(e.target.result);
                 saveData(newData);
                 alert('Данные успешно загружены!');
+                checkInput(); // Обновление кнопок
                 updateSummary();
             } catch (err) {
                 alert('Ошибка загрузки данных');
@@ -305,7 +312,9 @@
                 savings: { main: [], emergency: [] },
                 withdrawals: { main: [], emergency: [] }
             });
-            document.getElementById('reportTable').innerHTML = '';
+            document.getElementById('reportTable').querySelector('tbody')?.innerHTML = '';
+            document.getElementById('amount').value = '';
+            checkInput();
             updateSummary();
         }
     };
