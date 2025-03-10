@@ -3,44 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Финансовый трекер</title>
+    <title>Финансовый учёт</title>
     <style>
+        /* Стили остались без изменений */
         body {
             font-family: Arial, sans-serif;
             background-color: #f3f4f6;
-            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
         .container {
-            background: white;
+            background-color: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            max-width: 800px;
-            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
         }
+        .button {
+            padding: 10px;
+            width: 100%;
+            margin: 5px 0;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .button:active {
+            opacity: 0.7;
+        }
+        .income { background-color: #4CAF50; }
+        .expenses { background-color: #F44336; }
+        .savings-main { background-color: #2196F3; }
+        .savings-emergency { background-color: #FFC107; }
+        .withdrawals-main { background-color: #9C27B0; }
+        .withdrawals-emergency { background-color: #FF5722; }
+        .file { background-color: #607D8B; }
+        .clear { background-color: #FF9800; }
         input[type="number"] {
             width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background: #4CAF50;
-            color: white;
-        }
-        button:disabled {
-            background: #cccccc;
-        }
-        .balance-display {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 4px;
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
         }
         table {
             width: 100%;
@@ -55,222 +64,276 @@
         th {
             background-color: #f2f2f2;
         }
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>Финансовый трекер</h2>
-    
-    <div class="balance-display">
-        <div>Баланс кошелька: <span id="walletBalance">0</span> руб.</div>
-        <div>Сберегательный счёт: <span id="savingsBalance">0</span> руб.</div>
-        <div>Экстренный счёт: <span id="emergencyBalance">0</span> руб.</div>
-    </div>
-
-    <input type="number" id="amount" placeholder="Введите сумму">
-    
-    <div class="buttons">
-        <button onclick="handleOperation('income')" class="income-btn" disabled>Получил</button>
-        <button onclick="handleOperation('expense')" class="expense-btn" disabled>Потратил</button>
-        <button onclick="handleOperation('toSavings')" class="transfer-btn" disabled>Перевел на сберегательный</button>
-        <button onclick="handleOperation('toEmergency')" class="transfer-btn" disabled>Перевел на экстренный</button>
-        <button onclick="handleOperation('fromSavings')" class="withdraw-btn" disabled>Взял со сберегательного</button>
-        <button onclick="handleOperation('fromEmergency')" class="withdraw-btn" disabled>Взял с экстренного</button>
-    </div>
-
-    <div class="file-actions">
-        <button onclick="saveToFile()">Сохранить в файл</button>
-        <input type="file" id="fileInput" onchange="loadFromFile(event)">
-        <button onclick="clearAll()">Очистить всё</button>
-    </div>
-
-    <h3>Отчет:</h3>
-    <button onclick="generateReport(30)">За месяц</button>
-    <button onclick="generateReport(90)">За 3 месяца</button>
-    <button onclick="generateReport(180)">За 6 месяцев</button>
-    
-    <div id="reportContainer" class="hidden">
-        <table id="reportTable">
-            <thead>
-                <tr>
-                    <th>Операция</th>
-                    <th>Сумма</th>
-                    <th>Дата</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+    <h2>Финансовый учёт</h2>
+    <input type="number" id="amount" placeholder="Введите сумму" oninput="checkInput()" />
+    <button class="button income" id="incomeBtn" onclick="addEntry('income')" disabled>Получил</button>
+    <button class="button expenses" id="expensesBtn" onclick="addEntry('expenses')" disabled>Потратил</button>
+    <button class="button savings-main" id="savingsMainBtn" onclick="addSavings('main')" disabled>Отложил в накопительный</button>
+    <button class="button savings-emergency" id="savingsEmergencyBtn" onclick="addSavings('emergency')" disabled>Отложил в экстренный</button>
+    <button class="button withdrawals-main" id="withdrawalsMainBtn" onclick="addWithdrawal('main')" disabled>Взял из накопительных</button>
+    <button class="button withdrawals-emergency" id="withdrawalsEmergencyBtn" onclick="addWithdrawal('emergency')" disabled>Взял из экстренных</button>
+    <h3>Отчёты</h3>
+    <button class="button file" onclick="generateReport(1)">За месяц</button>
+    <button class="button file" onclick="generateReport(3)">За 3 месяца</button>
+    <button class="button file" onclick="generateReport(6)">За 6 месяцев</button>
+    <h3>Файл</h3>
+    <button class="button file" onclick="saveToFile()">Сохранить в файл</button>
+    <input type="file" id="fileInput" onchange="loadFromFile(event)" />
+    <h3>Отчёт</h3>
+    <table id="reportTable">
+        <thead>
+            <tr>
+                <th>Тип</th>
+                <th>Сумма</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <h3>Остатки и суммы</h3>
+    <table id="summaryTable">
+        <thead>
+            <tr>
+                <th>Описание</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Всего потратил</td>
+                <td id="totalSpent">0</td>
+            </tr>
+            <tr>
+                <td>Положил на счет</td>
+                <td id="totalDeposited">0</td>
+            </tr>
+            <tr>
+                <td>Положил на экстренный счет</td>
+                <td id="totalEmergencyDeposited">0</td>
+            </tr>
+            <tr>
+                <td>Взял с накопительного</td>
+                <td id="totalWithdrawnMain">0</td>
+            </tr>
+            <tr>
+                <td>Взял с экстренного</td>
+                <td id="totalWithdrawnEmergency">0</td>
+            </tr>
+            <tr>
+                <td>Остаток на кошельке</td>
+                <td id="walletBalance">0</td>
+            </tr>
+            <tr>
+                <td>Остаток на накопительном</td>
+                <td id="mainAccountBalance">0</td>
+            </tr>
+            <tr>
+                <td>Остаток на экстренном</td>
+                <td id="emergencyAccountBalance">0</td>
+            </tr>
+        </tbody>
+    </table>
+    <button class="button clear" onclick="clearData()">Очистить</button>
 </div>
-
 <script>
-let data = {
-    wallet: 0,
-    savings: 0,
-    emergency: 0,
-    transactions: []
-};
-
-const saveToStorage = () => localStorage.setItem('financeData', JSON.stringify(data));
-const loadFromStorage = () => {
-    try {
-        const stored = localStorage.getItem('financeData');
-        if (stored) data = JSON.parse(stored);
-    } catch {}
-    updateBalances();
-};
-
-function updateButtons() {
-    const amount = document.getElementById('amount').value;
-    document.querySelectorAll('button').forEach(btn => btn.disabled = !amount);
-}
-
-function handleOperation(type) {
-    const amount = parseFloat(document.getElementById('amount').value);
-    if (!amount) return;
-
-    const transaction = {
-        type,
-        amount,
-        date: new Date().toISOString().split('T')[0]
+    let data = {
+        income: [],
+        expenses: [],
+        savings: { main: [], emergency: [] },
+        withdrawals: { main: [], emergency: [] }
     };
 
-    switch(type) {
-        case 'income':
-            data.wallet += amount;
-            break;
-        case 'expense':
-            data.wallet -= amount;
-            break;
-        case 'toSavings':
-            data.wallet -= amount;
-            data.savings += amount;
-            break;
-        case 'toEmergency':
-            data.wallet -= amount;
-            data.emergency += amount;
-            break;
-        case 'fromSavings':
-            data.savings -= amount;
-            data.wallet += amount;
-            break;
-        case 'fromEmergency':
-            data.emergency -= amount;
-            data.wallet += amount;
-            break;
-    }
-
-    data.transactions.push(transaction);
-    saveToStorage();
-    document.getElementById('amount').value = '';
-    updateBalances();
-    updateButtons();
-}
-
-function updateBalances() {
-    document.getElementById('walletBalance').textContent = data.wallet.toFixed(2);
-    document.getElementById('savingsBalance').textContent = data.savings.toFixed(2);
-    document.getElementById('emergencyBalance').textContent = data.emergency.toFixed(2);
-}
-
-function generateReport(daysBack) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-
-    const filtered = data.transactions.filter(t => 
-        new Date(t.date) >= cutoffDate
-    );
-
-    const report = {
-        totalIncome: filtered.filter(t => t.type == 'income').reduce((sum, t) => sum + t.amount, 0),
-        totalExpense: filtered.filter(t => t.type == 'expense').reduce((sum, t) => sum + t.amount, 0),
-        walletBalance: data.wallet,
-        savingsBalance: data.savings,
-        emergencyBalance: data.emergency
+    const saveData = (newData) => {
+        localStorage.setItem('financeData', JSON.stringify(newData));
+        data = newData;
     };
 
-    const reportContainer = document.getElementById('reportContainer');
-    reportContainer.classList.remove('hidden');
-
-    const tableBody = document.querySelector('#reportTable tbody');
-    tableBody.innerHTML = '';
-    
-    filtered.forEach(t => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${getTypeName(t.type)}</td>
-            <td>${t.amount}</td>
-            <td>${t.date}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-
-    document.getElementById('totalIncome').textContent = report.totalIncome.toFixed(2);
-    document.getElementById('totalExpense').textContent = report.totalExpense.toFixed(2);
-}
-
-function getTypeName(type) {
-    const types = {
-        income: 'Пополнение',
-        expense: 'Расход',
-        toSavings: 'Перевод на сберегательный',
-        toEmergency: 'Перевод на экстренный',
-        fromSavings: 'Снятие со сберегательного',
-        fromEmergency: 'Снятие с экстренного'
-    };
-    return types[type];
-}
-
-function saveToFile() {
-    const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'finance_data.json';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-}
-
-function loadFromFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            data = JSON.parse(e.target.result);
-            saveToStorage();
-            updateBalances();
-            alert('Данные загружены');
-        } catch {
-            alert('Ошибка формата файла');
+    const loadData = () => {
+        const storedData = localStorage.getItem('financeData');
+        if (storedData) {
+            data = JSON.parse(storedData);
         }
     };
-    reader.readAsText(file);
-}
+    loadData();
+    
+    // Новая функция для обновления балансов
+    const updateBalances = () => {
+        const totalIncome = data.income.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalSpent = data.expenses.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalSavingsMain = data.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalSavingsEmergency = data.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawalsMain = data.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawalsEmergency = data.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
 
-function clearAll() {
-    if (confirm('Удалить все данные?')) {
-        data = {
-            wallet: 0,
-            savings: 0,
-            emergency: 0,
-            transactions: []
-        };
-        saveToStorage();
+        // Обновляем остатки
+        document.getElementById('walletBalance').textContent = 
+            (totalIncome - totalSpent - totalSavingsMain - totalSavingsEmergency + 
+            totalWithdrawalsMain + totalWithdrawalsEmergency).toFixed(2);
+        
+        document.getElementById('mainAccountBalance').textContent = 
+            (totalSavingsMain - totalWithdrawalsMain).toFixed(2);
+        
+        document.getElementById('emergencyAccountBalance').textContent = 
+            (totalSavingsEmergency - totalWithdrawalsEmergency).toFixed(2);
+    };
+
+    const checkInput = () => {
+        const amount = document.getElementById('amount').value;
+        const buttons = [
+            'incomeBtn', 'expensesBtn', 'savingsMainBtn', 'savingsEmergencyBtn', 
+            'withdrawalsMainBtn', 'withdrawalsEmergencyBtn'
+        ];
+        buttons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.disabled = !amount;
+        });
+    };
+
+    // Обновляем кнопки при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        checkInput();
         updateBalances();
-        document.getElementById('reportContainer').classList.add('hidden');
-    }
-}
+    });
 
-// Инициализация
-loadFromStorage();
-updateButtons();
-updateBalances();
+    const addEntry = (category) => {
+        const amount = parseFloat(document.getElementById('amount').value);
+        if (!amount) return;
+        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
+        data[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
+        checkInput();
+        updateBalances();
+        updateSummary();
+    };
+
+    const addSavings = (category) => {
+        const amount = parseFloat(document.getElementById('amount').value);
+        if (!amount) return;
+        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
+        data.savings[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
+        checkInput();
+        updateBalances();
+        updateSummary();
+    };
+
+    const addWithdrawal = (category) => {
+        const amount = parseFloat(document.getElementById('amount').value);
+        if (!amount) return;
+        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
+        data.withdrawals[category].push(newEntry);
+        saveData(data);
+        document.getElementById('amount').value = '';
+        checkInput();
+        updateBalances();
+        updateSummary();
+    };
+
+    const generateReport = (months) => {
+        const now = new Date();
+        const pastDate = new Date();
+        pastDate.setMonth(now.getMonth() - months);
+        
+        const report = {
+            income: data.income.filter(i => new Date(i.date) >= pastDate),
+            expenses: data.expenses.filter(e => new Date(e.date) >= pastDate),
+            savings: {
+                main: data.savings.main.filter(s => new Date(s.date) >= pastDate),
+                emergency: data.savings.emergency.filter(s => new Date(s.date) >= pastDate)
+            },
+            withdrawals: {
+                main: data.withdrawals.main.filter(w => new Date(w.date) >= pastDate),
+                emergency: data.withdrawals.emergency.filter(w => new Date(w.date) >= pastDate)
+            }
+        };
+        
+        renderReport(report);
+        updateSummary(report);
+    };
+
+    const renderReport = (report) => {
+        const tableBody = document.getElementById('reportTable').querySelector('tbody');
+        if (!tableBody) return;
+        tableBody.innerHTML = '';
+        
+        const addRow = (type, entries) => {
+            entries.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${type}</td><td>${entry.amount}</td><td>${entry.date}</td>`;
+                tableBody.appendChild(row);
+            });
+        };
+
+        addRow('Доход', report.income);
+        addRow('Расход', report.expenses);
+        addRow('Накопительное', report.savings.main);
+        addRow('Экстренные', report.savings.emergency);
+        addRow('Взято с накопительного', report.withdrawals.main);
+        addRow('Взято с экстренного', report.withdrawals.emergency);
+    };
+
+    const updateSummary = (report = data) => {
+        const totalSpent = report.expenses.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalDeposited = report.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalEmergencyDeposited = report.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnMain = report.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
+        const totalWithdrawnEmergency = report.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+
+        document.getElementById('totalSpent').textContent = totalSpent.toFixed(2);
+        document.getElementById('totalDeposited').textContent = totalDeposited.toFixed(2);
+        document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited.toFixed(2);
+        document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain.toFixed(2);
+        document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency.toFixed(2);
+    };
+
+    const saveToFile = () => {
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'finance_data.json';
+        link.click();
+    };
+
+    const loadFromFile = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const newData = JSON.parse(e.target.result);
+                saveData(newData);
+                alert('Данные успешно загружены!');
+                updateBalances();
+                checkInput();
+            } catch (err) {
+                alert('Ошибка загрузки данных');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const clearData = () => {
+        if (confirm('Вы уверены, что хотите очистить все данные?')) {
+            saveData({
+                income: [],
+                expenses: [],
+                savings: { main: [], emergency: [] },
+                withdrawals: { main: [], emergency: [] }
+            });
+            document.getElementById('reportTable').querySelector('tbody').innerHTML = '';
+            document.getElementById('amount').value = '';
+            checkInput();
+            updateBalances();
+            updateSummary();
+        }
+    };
 </script>
 </body>
 </html>
