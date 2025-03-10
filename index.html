@@ -160,7 +160,10 @@
         income: [],
         expenses: [],
         savings: { main: [], emergency: [] },
-        withdrawals: { main: [], emergency: [] }
+        withdrawals: { main: [], emergency: [] },
+        walletBalance: 0,  // Добавляем кошелек
+        mainAccountBalance: 0,
+        emergencyAccountBalance: 0
     };
 
     const saveData = (newData) => {
@@ -189,9 +192,15 @@
     };
 
     const addEntry = (category) => {
-        const amount = document.getElementById('amount').value;
+        const amount = parseFloat(document.getElementById('amount').value);
         if (!amount) return;
-        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
+
+        // Обновляем кошелек при поступлении
+        if (category === 'income') {
+            data.walletBalance += amount;
+        }
+
+        const newEntry = { amount, date: new Date().toISOString().split('T')[0] };
         data[category].push(newEntry);
         saveData(data);
         document.getElementById('amount').value = '';
@@ -199,21 +208,33 @@
     };
 
     const addSavings = (category) => {
-        const amount = document.getElementById('amount').value;
+        const amount = parseFloat(document.getElementById('amount').value);
         if (!amount) return;
-        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
-        data.savings[category].push(newEntry);
-        saveData(data);
+
+        // Понижаем баланс кошелька при отложении
+        if (data.walletBalance >= amount) {
+            data.walletBalance -= amount;
+            data.savings[category].push({ amount, date: new Date().toISOString().split('T')[0] });
+            saveData(data);
+        } else {
+            alert("Недостаточно средств на кошельке!");
+        }
         document.getElementById('amount').value = '';
         checkInput();
     };
 
     const addWithdrawal = (category) => {
-        const amount = document.getElementById('amount').value;
+        const amount = parseFloat(document.getElementById('amount').value);
         if (!amount) return;
-        const newEntry = { amount: parseFloat(amount), date: new Date().toISOString().split('T')[0] };
-        data.withdrawals[category].push(newEntry);
-        saveData(data);
+
+        // Проверяем доступность средств
+        if (data.savings[category] && data.savings[category].reduce((sum, entry) => sum + entry.amount, 0) >= amount) {
+            data.walletBalance += amount;
+            data.withdrawals[category].push({ amount, date: new Date().toISOString().split('T')[0] });
+            saveData(data);
+        } else {
+            alert("Недостаточно средств на этом счете для вывода!");
+        }
         document.getElementById('amount').value = '';
         checkInput();
     };
@@ -236,81 +257,77 @@
             }
         };
 
-        renderReport(report);
-        updateSummary(report);
+        updateReportTable(report);
     };
 
-    const renderReport = (report) => {
-        const tableBody = document.getElementById('reportTable').getElementsByTagName('tbody')[0];
-        tableBody.innerHTML = '';
+    const updateReportTable = (report) => {
+        const tbody = document.querySelector('#reportTable tbody');
+        tbody.innerHTML = '';
 
-        const addRow = (type, data) => {
-            data.forEach(entry => {
+        Object.entries(report).forEach(([category, items]) => {
+            items.forEach(item => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${type}</td><td>${entry.amount}</td><td>${entry.date}</td>`;
-                tableBody.appendChild(row);
+                row.innerHTML = `
+                    <td>${category}</td>
+                    <td>${item.amount}</td>
+                    <td>${item.date}</td>
+                `;
+                tbody.appendChild(row);
             });
-        };
+        });
 
-        addRow('Доход', report.income);
-        addRow('Расход', report.expenses);
-        addRow('Накопления', report.savings.main);
-        addRow('Экстренные накопления', report.savings.emergency);
-        addRow('Вывод из накоплений', report.withdrawals.main);
-        addRow('Вывод из экстренных накоплений', report.withdrawals.emergency);
+        updateSummaryTable();
     };
 
-    const updateSummary = (report) => {
-        const totalSpent = report.expenses.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalDeposited = report.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalEmergencyDeposited = report.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalWithdrawnMain = report.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
-        const totalWithdrawnEmergency = report.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
-
-        const walletBalance = totalDeposited - totalWithdrawnMain - totalWithdrawnEmergency;
-        const mainAccountBalance = totalDeposited - totalWithdrawnMain;
-        const emergencyAccountBalance = totalEmergencyDeposited - totalWithdrawnEmergency;
-
-        document.getElementById('totalSpent').textContent = totalSpent;
-        document.getElementById('totalDeposited').textContent = totalDeposited;
-        document.getElementById('totalEmergencyDeposited').textContent = totalEmergencyDeposited;
-        document.getElementById('totalWithdrawnMain').textContent = totalWithdrawnMain;
-        document.getElementById('totalWithdrawnEmergency').textContent = totalWithdrawnEmergency;
-        document.getElementById('walletBalance').textContent = walletBalance;
-        document.getElementById('mainAccountBalance').textContent = mainAccountBalance;
-        document.getElementById('emergencyAccountBalance').textContent = emergencyAccountBalance;
+    const updateSummaryTable = () => {
+        document.getElementById('totalSpent').textContent = data.expenses.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('totalDeposited').textContent = data.income.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('totalEmergencyDeposited').textContent = data.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('totalWithdrawnMain').textContent = data.withdrawals.main.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('totalWithdrawnEmergency').textContent = data.withdrawals.emergency.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('walletBalance').textContent = data.walletBalance;
+        document.getElementById('mainAccountBalance').textContent = data.savings.main.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('emergencyAccountBalance').textContent = data.savings.emergency.reduce((sum, entry) => sum + entry.amount, 0);
     };
 
     const saveToFile = () => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'finance_data.json';
-        link.click();
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'finance_data.json';
+        a.click();
     };
 
     const loadFromFile = (event) => {
         const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                saveData(JSON.parse(content));
-                alert("Данные загружены успешно!");
-                checkInput();
-            };
-            reader.readAsText(file);
-        }
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const fileData = JSON.parse(reader.result);
+            saveData(fileData);
+            updateSummaryTable();
+            updateReportTable(fileData);
+        };
+
+        reader.readAsText(file);
     };
 
     const clearData = () => {
-        if (confirm("Вы уверены, что хотите очистить все данные?")) {
-            localStorage.removeItem('financeData');
-            data = { income: [], expenses: [], savings: { main: [], emergency: [] }, withdrawals: { main: [], emergency: [] } };
-            renderReport(data);
-            updateSummary(data);
-        }
+        localStorage.removeItem('financeData');
+        data = {
+            income: [],
+            expenses: [],
+            savings: { main: [], emergency: [] },
+            withdrawals: { main: [], emergency: [] },
+            walletBalance: 0,
+            mainAccountBalance: 0,
+            emergencyAccountBalance: 0
+        };
+        updateSummaryTable();
+        updateReportTable({});
     };
 </script>
+
 </body>
 </html>
