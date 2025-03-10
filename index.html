@@ -93,6 +93,7 @@
             </tr>
         </thead>
         <tbody>
+            <!-- Данные отчета будут добавляться сюда -->
         </tbody>
     </table>
     <h3>Остатки и суммы</h3>
@@ -169,12 +170,11 @@
         ];
         buttons.forEach(btnId => {
             const btn = document.getElementById(btnId);
-            if (btn) btn.disabled = !amount; // Проверка на существование кнопки
+            if (btn) btn.disabled = !amount;
         });
     };
 
-    // Загрузка DOM и первоначальная проверка
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', () => {
         checkInput();
     });
 
@@ -230,6 +230,7 @@
         };
         
         renderReport(report);
+        updateSummary();
     };
 
     const renderReport = (report) => {
@@ -295,7 +296,7 @@
                 const newData = JSON.parse(e.target.result);
                 saveData(newData);
                 alert('Данные успешно загружены!');
-                checkInput(); // Обновление кнопок
+                checkInput();
                 updateSummary();
             } catch (err) {
                 alert('Ошибка загрузки данных');
