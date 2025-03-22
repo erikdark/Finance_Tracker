@@ -67,24 +67,40 @@
 
         let finances = { wallet: 0, savings: 0, emergency: 0 };
 
+        // Функция загрузки данных из Firebase
         async function loadData() {
-            const docSnap = await getDoc(userDoc);
-            if (docSnap.exists()) {
-                finances = docSnap.data();
-                updateDisplay();
+            try {
+                const docSnap = await getDoc(userDoc);
+                if (docSnap.exists()) {
+                    finances = docSnap.data();
+                    updateDisplay();
+                } else {
+                    console.log("Документ не найден, используем начальные данные.");
+                    updateDisplay();
+                }
+            } catch (e) {
+                console.error("Ошибка при загрузке данных:", e);
             }
         }
 
+        // Функция сохранения данных в Firebase
         async function saveData() {
-            await setDoc(userDoc, finances);
+            try {
+                await setDoc(userDoc, finances);
+                console.log("Данные успешно сохранены в Firebase");
+            } catch (e) {
+                console.error("Ошибка при сохранении данных:", e);
+            }
         }
 
+        // Функция обновления отображения балансов
         function updateDisplay() {
             document.getElementById('wallet').textContent = finances.wallet;
             document.getElementById('savings').textContent = finances.savings;
             document.getElementById('emergency').textContent = finances.emergency;
         }
 
+        // Функции для различных операций
         function deposit() {
             let amount = parseFloat(document.getElementById('amount').value);
             if (!isNaN(amount) && amount > 0) {
@@ -143,6 +159,7 @@
             }
         }
 
+        // Загружаем данные при старте страницы
         window.onload = loadData;
     </script>
 </body>
