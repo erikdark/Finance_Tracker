@@ -48,12 +48,36 @@
         <button onclick="withdrawFromEmergency()">Взял с экстренного</button>
     </div>
 
-    <script>
-        let finances = {
-            wallet: 0,
-            savings: 0,
-            emergency: 0
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1LO7cAwdOrhQzMNc7GHaAPMz3csCDc3g",
+            authDomain: "finance-tracker-f1c3f.firebaseapp.com",
+            projectId: "finance-tracker-f1c3f",
+            storageBucket: "finance-tracker-f1c3f.appspot.com",
+            messagingSenderId: "289655580622",
+            appId: "1:289655580622:web:c0811e73a05b94d5f8ad9f"
         };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const userDoc = doc(db, "users", "user1");
+
+        let finances = { wallet: 0, savings: 0, emergency: 0 };
+
+        async function loadData() {
+            const docSnap = await getDoc(userDoc);
+            if (docSnap.exists()) {
+                finances = docSnap.data();
+                updateDisplay();
+            }
+        }
+
+        async function saveData() {
+            await setDoc(userDoc, finances);
+        }
 
         function updateDisplay() {
             document.getElementById('wallet').textContent = finances.wallet;
@@ -66,6 +90,7 @@
             if (!isNaN(amount) && amount > 0) {
                 finances.wallet += amount;
                 updateDisplay();
+                saveData();
             }
         }
 
@@ -74,6 +99,7 @@
             if (!isNaN(amount) && amount > 0 && finances.wallet >= amount) {
                 finances.wallet -= amount;
                 updateDisplay();
+                saveData();
             }
         }
 
@@ -83,6 +109,7 @@
                 finances.wallet -= amount;
                 finances.savings += amount;
                 updateDisplay();
+                saveData();
             }
         }
 
@@ -92,6 +119,7 @@
                 finances.wallet -= amount;
                 finances.emergency += amount;
                 updateDisplay();
+                saveData();
             }
         }
 
@@ -101,6 +129,7 @@
                 finances.savings -= amount;
                 finances.wallet += amount;
                 updateDisplay();
+                saveData();
             }
         }
 
@@ -110,8 +139,11 @@
                 finances.emergency -= amount;
                 finances.wallet += amount;
                 updateDisplay();
+                saveData();
             }
         }
+
+        window.onload = loadData;
     </script>
 </body>
 </html>
