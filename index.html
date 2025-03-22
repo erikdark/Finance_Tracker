@@ -2,116 +2,49 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Финансовый трекер</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .balance {
-            font-size: 24px;
-            margin: 10px 0;
-        }
-        button {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 10px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h2>Финансовый трекер</h2>
-        <p class="balance">Кошелек: <span id="wallet">0</span> ₽</p>
-        <p class="balance">Сберегательный: <span id="savings">0</span> ₽</p>
-        <p class="balance">Экстренный: <span id="emergency">0</span> ₽</p>
-        
-        <input type="number" id="amount" placeholder="Введите сумму">
-        <button onclick="deposit()">Получил</button>
-        <button onclick="spend()">Потратил</button>
-        <button onclick="transferToSavings()">Перевел на сберегательный</button>
-        <button onclick="transferToEmergency()">Перевел на экстренный</button>
-        <button onclick="withdrawFromSavings()">Взял со сберегательного</button>
-        <button onclick="withdrawFromEmergency()">Взял с экстренного</button>
+        <h1>Финансовый трекер</h1>
+        <div id="balances">
+            <p>Кошелек: <span id="wallet">0</span> ₽</p>
+            <p>Сберегательный: <span id="savings">0</span> ₽</p>
+            <p>Экстренный: <span id="emergency">0</span> ₽</p>
+            <p>Крипта: <span id="crypto">0</span> ₽</p>
+        </div>
+        <div class="controls">
+            <input type="number" id="amount" placeholder="Сумма" min="0">
+            <button onclick="updateBalance('received')">Получил</button>
+            <button onclick="updateBalance('spent')">Потратил</button>
+            <button onclick="updateBalance('to_savings')">На сберегательный</button>
+            <button onclick="updateBalance('to_emergency')">На экстренный</button>
+            <button onclick="updateBalance('from_savings')">Взял со сберегательного</button>
+            <button onclick="updateBalance('from_emergency')">Взял с экстренного</button>
+            <button onclick="updateBalance('crypto_received')">Получил (крипта)</button>
+            <button onclick="updateBalance('crypto_withdrawn')">Вывел (крипта)</button>
+        </div>
+        <div class="file-controls">
+            <button onclick="saveToJson()">Сохранить в JSON</button>
+            <input type="file" id="loadFile" accept=".json" onchange="loadFromJson()">
+            <button onclick="document.getElementById('reportFile').click()">Загрузить для отчета</button>
+            <input type="file" id="reportFile" accept=".json" onchange="generateReport()" style="display: none;">
+        </div>
+        <p id="error" style="color: red;"></p>
+        <div id="report" style="display: none;">
+            <h2>Отчет</h2>
+            <table>
+                <tr><td>Всего получено:</td><td><span id="totalReceived">0</span> ₽</td></tr>
+                <tr><td>Получено (крипта):</td><td><span id="totalCryptoReceived">0</span> ₽</td></tr>
+                <tr><td>Выведено (крипта):</td><td><span id="totalCryptoWithdrawn">0</span> ₽</td></tr>
+                <tr><td>На накопительном:</td><td><span id="totalSavings">0</span> ₽</td></tr>
+                <tr><td>На экстренном:</td><td><span id="totalEmergency">0</span> ₽</td></tr>
+                <tr><td>Потрачено:</td><td><span id="totalSpent">0</span> ₽</td></tr>
+                <tr><td>Итог (получено - потрачено):</td><td><span id="netResult">0</span> ₽</td></tr>
+            </table>
+        </div>
     </div>
-
-    <script>
-        let finances = {
-            wallet: 0,
-            savings: 0,
-            emergency: 0
-        };
-
-        function updateDisplay() {
-            document.getElementById('wallet').textContent = finances.wallet;
-            document.getElementById('savings').textContent = finances.savings;
-            document.getElementById('emergency').textContent = finances.emergency;
-        }
-
-        function deposit() {
-            let amount = parseFloat(document.getElementById('amount').value);
-            if (!isNaN(amount) && amount > 0) {
-                finances.wallet += amount;
-                updateDisplay();
-            }
-        }
-
-        function spend() {
-            let amount = parseFloat(document.getElementById('amount').value);
-            if (!isNaN(amount) && amount > 0 && finances.wallet >= amount) {
-                finances.wallet -= amount;
-                updateDisplay();
-            }
-        }
-
-        function transferToSavings() {
-            let amount = parseFloat(document.getElementById('amount').value);
-            if (!isNaN(amount) && amount > 0 && finances.wallet >= amount) {
-                finances.wallet -= amount;
-                finances.savings += amount;
-                updateDisplay();
-            }
-        }
-
-        function transferToEmergency() {
-            let amount = parseFloat(document.getElementById('amount').value);
-            if (!isNaN(amount) && amount > 0 && finances.wallet >= amount) {
-                finances.wallet -= amount;
-                finances.emergency += amount;
-                updateDisplay();
-            }
-        }
-
-        function withdrawFromSavings() {
-            let amount = parseFloat(document.getElementById('amount').value);
-            if (!isNaN(amount) && amount > 0 && finances.savings >= amount) {
-                finances.savings -= amount;
-                finances.wallet += amount;
-                updateDisplay();
-            }
-        }
-
-        function withdrawFromEmergency() {
-            let amount = parseFloat(document.getElementById('amount').value);
-            if (!isNaN(amount) && amount > 0 && finances.emergency >= amount) {
-                finances.emergency -= amount;
-                finances.wallet += amount;
-                updateDisplay();
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
